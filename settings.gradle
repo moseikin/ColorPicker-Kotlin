@@ -1,0 +1,3 @@
+rootProject.name = "ColorPickerLibrary"
+include ':app'
+include ':app:colorpicker'

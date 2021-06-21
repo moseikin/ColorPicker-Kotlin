@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="ColorPickerView">
+        <attr name="show_alpha_scale" format="boolean"/>
+        <attr name="show_main_colors" format="boolean"/>
+    </declare-styleable>
+</resources>
