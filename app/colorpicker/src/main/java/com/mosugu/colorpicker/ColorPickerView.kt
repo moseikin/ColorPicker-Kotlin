@@ -5,63 +5,68 @@ import android.graphics.*
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
-import android.widget.TextView
 import androidx.core.content.ContextCompat
 import java.lang.IllegalArgumentException
 import kotlin.math.*
 
 
 class ColorPickerView (context: Context) : View (context) {
-    private lateinit var context2 : Context
 
     constructor(context: Context, attributeSet: AttributeSet): this(context) {
         val attributes = context.obtainStyledAttributes(attributeSet, R.styleable.ColorPickerView)
         showAlphaScale = attributes.getBoolean(R.styleable.ColorPickerView_show_alpha_scale, true)
         showMainColors = attributes.getBoolean(R.styleable.ColorPickerView_show_main_colors, true)
         attributes.recycle()
-        this.context2 = context
     }
-    private var paint = Paint().apply {
-        color = ContextCompat.getColor(context, R.color.white)
-    }
+    private var paint = Paint()
+    private var alphaScalePaint = Paint()
     private var showAlphaScale: Boolean = true
     private var showMainColors: Boolean = true
     private var bitmapPicker: Bitmap = BitmapFactory.decodeResource(resources, R.drawable.picker)
     private var bitmapCircle: Bitmap = BitmapFactory.decodeResource(resources, R.drawable.color_circle)
     private var bitmapAlphaPicker = BitmapFactory.decodeResource(resources, R.drawable.alpha_picker)
-    private var bitmapAlphaScale: Bitmap = BitmapFactory.decodeResource(resources, R.drawable.alpha_scale)
+    private var bitmapAlphaScaleBackground: Bitmap = BitmapFactory.decodeResource(resources, R.drawable.alpha_scale)
+    private lateinit var bitmapAlphaScale: Bitmap
     private lateinit var bitmap: Bitmap
-
+    private val mainColorsCount = 8
+    private var colorsRectArray = arrayOfNulls<RectF>(mainColorsCount)
+    private var colorsPaintArray = arrayOfNulls<Paint>(mainColorsCount)
     private lateinit var rectCircle: RectF
     private lateinit var rectColorPicker: RectF
     private var rectAlphaScale: RectF = RectF(0F,0F,0F, 0F)
     private lateinit var rectAlphaPicker: RectF
     private var circleRadius = 0F
     private var pickerRadius = 0F
-    private var colorARGB = 0
+    private var colorARGB = Color.WHITE
     private var red = 255
     private var green = 255
     private var blue = 255
     private var alpha = 255
     private var lastPressedFigure = 0
+    private var colorTransparent = ContextCompat.getColor(context, R.color.transparent)
+    private lateinit var linearGradient : LinearGradient
+    private var gradientColorsArray = IntArray(2)
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
         initShapes(w, h)
-
     }
 
     private fun initShapes(w : Int, h : Int){
-        val shapeConstructors = ShapeConstructors(w, h)
+        val shapeConstructors = ShapeConstructors(w, h, context, showAlphaScale, showMainColors, mainColorsCount)
         if(showAlphaScale) {
+            paintAlphaScale(colorARGB)
             rectAlphaScale = shapeConstructors.getAlphaScaleRect()
             rectAlphaPicker = shapeConstructors.getAlphaPickerRect()
+            bitmapAlphaScale = Bitmap.createBitmap(rectAlphaScale.width().toInt(),
+            rectAlphaScale.height().toInt(), Bitmap.Config.ARGB_8888)
         }
         if (showMainColors) {
-            shapeConstructors.createMainColors()
-            val textView = TextView(context2)
-            textView.setBackgroundColor(Color.BLACK)
-            textView.text = "dfbfdbmfdkbmsklfmbksnokbsflkbmsdflbmlksfbsfbfbsrbfbr"
+            for (i in 0 until mainColorsCount) {
+                colorsRectArray[i] = shapeConstructors.getMainColorRectF(i)
+                colorsPaintArray[i] = shapeConstructors.getPaint(i)
+            }
+
         }
         rectCircle = shapeConstructors.getColorCircleRect()
 
@@ -75,13 +80,22 @@ class ColorPickerView (context: Context) : View (context) {
         draw(Canvas(bitmap))
     }
 
+
+
     override fun onDraw(canvas: Canvas?) {
         super.onDraw(canvas)
         canvas?.drawBitmap(bitmapCircle, null, rectCircle, paint)
         canvas?.drawBitmap(bitmapPicker, null, rectColorPicker, paint)
         if (showAlphaScale) {
-            canvas?.drawBitmap(bitmapAlphaScale, null, rectAlphaScale, paint)
+            canvas?.drawBitmap(bitmapAlphaScaleBackground, null, rectAlphaScale, alphaScalePaint)
+            canvas?.drawRect(rectAlphaScale, alphaScalePaint)
             canvas?.drawBitmap(bitmapAlphaPicker, null, rectAlphaPicker, paint)
+        }
+
+        if(showMainColors) {
+            for ( i in colorsRectArray.indices ) {
+                canvas?.drawRect(colorsRectArray[i]!!, colorsPaintArray[i]!!)
+            }
         }
     }
 
@@ -95,7 +109,12 @@ class ColorPickerView (context: Context) : View (context) {
                 event.y >= rectAlphaScale.top && event.y <= rectAlphaScale.bottom || lastPressedFigure == 2) {
                 lastPressedFigure = 2
                 placeAlphaPicker(event)
+            } else if (event.x >= colorsRectArray[0]?.left!! && event.x <= colorsRectArray[0]?.right!! &&
+                        event.y >= colorsRectArray[0]?.top!! && event.y <= colorsRectArray[mainColorsCount - 1]?.bottom!!) {
+                getPixelColor(event.x, event.y)
             }
+            // redrawing canvas to apple changes
+            invalidate()
         } else lastPressedFigure = 0
         return true
     }
@@ -129,8 +148,6 @@ class ColorPickerView (context: Context) : View (context) {
         rectColorPicker.offsetTo(dX, dY)
 
         getPixelColor(dX, dY)
-      // redraw canvas to apple changes
-        invalidate()
     }
 
     private fun getPixelColor(coordinateX : Float, coordinateY : Float) {
@@ -143,6 +160,7 @@ class ColorPickerView (context: Context) : View (context) {
             green = Color.green(pixel)
             blue = Color.blue(pixel)
             colorARGB = Color.argb(alpha, red, green, blue)
+            paintAlphaScale(colorARGB)
             Data.setColorArgb(colorARGB)         // passing color to singleton to allow outer classes get it
         } catch (e: IllegalArgumentException) {
             // occurs if x or y out of bitmap bounds
@@ -162,8 +180,15 @@ class ColorPickerView (context: Context) : View (context) {
         colorARGB = Color.argb(alpha, red, green, blue)
 
         Data.setColorArgb(colorARGB)
+    }
 
-        invalidate()
+    private fun paintAlphaScale(colorArgb : Int){
+        gradientColorsArray[0] = colorTransparent
+        gradientColorsArray[1] = colorArgb
+        linearGradient =
+            LinearGradient(rectAlphaScale.left, rectAlphaScale.top, rectAlphaScale.right, rectAlphaScale.bottom,
+                            gradientColorsArray, null, Shader.TileMode.MIRROR)
+        alphaScalePaint.shader = linearGradient
     }
 
 }
