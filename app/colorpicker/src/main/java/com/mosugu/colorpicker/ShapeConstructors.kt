@@ -4,18 +4,13 @@ import android.content.Context
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
-import kotlin.math.min
 
-class ShapeConstructors(viewWidth : Int, viewHeight : Int, context: Context,
+class ShapeConstructors(viewWidth : Int, context: Context,
                         showAlphaScale : Boolean, showMainColors : Boolean, mainColorsCount : Int) {
     private var alphaScaleHeight = 0F
     private var alphaScaleRect = RectF(0F, 0F, 0F, 0F)
     private lateinit var circleRect: RectF
-    private var minDensity = 0F
     private var viewWidth = 0F
-    private var viewHeight : Float
-    private var viewCenterX : Float
-    private var viewCenterY : Float
     private var mainColorsCount = 0
     private var mainColorsWidth = 0F
     private var leftMargin = 0F
@@ -26,21 +21,16 @@ class ShapeConstructors(viewWidth : Int, viewHeight : Int, context: Context,
     init {
         this.mainColorsCount = mainColorsCount
         this.viewWidth = viewWidth.toFloat()
-        this.viewHeight = viewHeight.toFloat()
-        viewCenterX = (viewWidth / 2).toFloat()
-        viewCenterY = (viewHeight / 2).toFloat()
         colorsArray = context.resources.getStringArray(R.array.colors_array)
-        minDensity = min(viewWidth, viewHeight).toFloat()
+
         if (showMainColors) {
-            mainColorsWidth = minDensity / 14
+            mainColorsWidth = viewWidth / 14F
             leftMargin = 0F
-        } else leftMargin = minDensity / 14
+        } else leftMargin = viewWidth / 14F
         if (showAlphaScale){
-            alphaScaleHeight = minDensity / 14
+            alphaScaleHeight = viewWidth / 14F
             bottomMargin = 0F
-        } else bottomMargin = minDensity / 14
-
-
+        } else bottomMargin = viewWidth / 14F
     }
 
     fun getColorPickerRect(pickerDiameter : Float): RectF {
@@ -52,23 +42,20 @@ class ShapeConstructors(viewWidth : Int, viewHeight : Int, context: Context,
     }
 
     fun getAlphaScaleRect(): RectF {
-        alphaScaleRect = RectF(viewCenterX - minDensity /2,
-                                minDensity - alphaScaleHeight * 1.3F,
-                            viewCenterX + minDensity / 2,
-                                minDensity - alphaScaleHeight * 0.3F)
+        alphaScaleRect = RectF(0F,
+                                viewWidth - alphaScaleHeight * 1.3F,
+                                    viewWidth,
+                             viewWidth - alphaScaleHeight * 0.3F)
         return alphaScaleRect
     }
 
     fun getColorCircleRect(): RectF {
         circleRect = if (mainColorsWidth == 0F && alphaScaleHeight == 0F) {
-                        RectF(viewCenterX - minDensity / 2,
-                            0F,
-                            viewCenterX + minDensity / 2,
-                            minDensity)
-                    } else  RectF(viewCenterX - minDensity / 2 + leftMargin,
+                        RectF(0F, 0F, viewWidth, viewWidth)
+                    } else  RectF(leftMargin,
                                 0F + bottomMargin,
-                            viewCenterX + minDensity / 2 - mainColorsWidth * 2 - leftMargin,
-                            minDensity - alphaScaleHeight * 2 - bottomMargin )
+                            viewWidth - mainColorsWidth * 2 - leftMargin,
+                          viewWidth - alphaScaleHeight * 2 - bottomMargin )
         return circleRect
     }
 
@@ -80,11 +67,11 @@ class ShapeConstructors(viewWidth : Int, viewHeight : Int, context: Context,
     }
 
     fun getMainColorRectF(rectByOrder : Int) : RectF {
-        val mainColorHeight = minDensity - bottomMargin * 2F - alphaScaleHeight * 2F
+        val mainColorHeight = viewWidth - bottomMargin * 2F - alphaScaleHeight * 2F
         val oneBlockHeight = mainColorHeight / mainColorsCount
-        mainColorRectF = RectF(viewCenterX + minDensity / 2 - mainColorsWidth,
+        mainColorRectF = RectF(viewWidth - mainColorsWidth,
                                 0.01F + bottomMargin + rectByOrder * oneBlockHeight,
-                                viewCenterX + minDensity / 2,
+                                viewWidth,
                                 bottomMargin + oneBlockHeight + rectByOrder * oneBlockHeight)
 
         return mainColorRectF

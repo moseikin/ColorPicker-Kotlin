@@ -47,13 +47,21 @@ class ColorPickerView (context: Context) : View (context) {
     private lateinit var linearGradient : LinearGradient
     private var gradientColorsArray = IntArray(2)
 
-    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-        super.onSizeChanged(w, h, oldw, oldh)
-        initShapes(w, h)
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+        // getting view width. This value will be assign to view height. So view has square form anyway
+        val widthSize = MeasureSpec.getSize(widthMeasureSpec)
+        setMeasuredDimension(widthSize, widthSize)
+
     }
 
-    private fun initShapes(w : Int, h : Int){
-        val shapeConstructors = ShapeConstructors(w, h, context, showAlphaScale, showMainColors, mainColorsCount)
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w, h, oldw, oldh)
+        initShapes(w)
+    }
+
+    private fun initShapes(w : Int){
+        val shapeConstructors = ShapeConstructors(w, context, showAlphaScale, showMainColors, mainColorsCount)
         if(showAlphaScale) {
             paintAlphaScale(colorARGB)
             rectAlphaScale = shapeConstructors.getAlphaScaleRect()
