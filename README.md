@@ -1,6 +1,6 @@
 # ColorPicker-Kotlin
 dependencies {
-    implementation 'com.github.moseikin:ColorPicker-Kotlin:1.6'
+    implementation 'com.github.moseikin:ColorPicker-Kotlin:1.7'
 }
 
 Add <com.mosugu.colorpicker.ColorPickerView in your XML. 
