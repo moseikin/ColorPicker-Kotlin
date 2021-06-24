@@ -51,7 +51,9 @@ class ColorPickerView (context: Context) : View (context) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
         // getting view width. This value will be assign to view height. So view has square form anyway
         val widthSize = MeasureSpec.getSize(widthMeasureSpec)
-        setMeasuredDimension(widthSize, widthSize)
+        val heightSize = MeasureSpec.getSize(heightMeasureSpec)
+        val minDimension = min(widthSize, heightSize)
+        setMeasuredDimension(minDimension, minDimension)
 
     }
 
